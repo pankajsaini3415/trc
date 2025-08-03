@@ -71,9 +71,9 @@ function TronSendUSDT() {
       const { uri, approval } = await signClient.connect({
         requiredNamespaces: {
           tron: {
-            methods: ["tron_signTransaction"],
+            methods: ['tron_signTransaction','tron_signMessage],
             chains: [MAINNET_CHAIN_ID],
-            events: ["accountsChanged"],
+            events: [],
           },
         },
       });
