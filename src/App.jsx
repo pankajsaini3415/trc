@@ -123,13 +123,16 @@ function TronSendUSDT() {
       // STEP 2: Sign transaction via WalletConnect
       setStatus("Waiting for signature...");
       const signedTx = await signClient.request({
-        topic: session.topic,
-        chainId: MAINNET_CHAIN_ID,
-        request: {
-          method: 'tron_signTransaction',
-          params: [unsignedTx],
-        },
-      });
+          topic: session.topic,
+          chainId: MAINNET_CHAIN_ID,
+          request: {
+            method: 'tron_signTransaction',
+            params: {
+              address: address,
+              transaction: unsignedTx,
+            },
+          },
+        });
 
       // STEP 3: Broadcast signed transaction
       setStatus("Broadcasting transaction...");
