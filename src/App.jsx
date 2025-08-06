@@ -82,6 +82,7 @@ function TronSendUSDT() {
 
       const session = await approval();
       setSession(session);
+      console.log("Supported TRON methods:", session.namespaces.tron.methods);
       const userAddress = session.namespaces.tron.accounts[0].split(":")[2];
       setAddress(userAddress);
       setStatus(`Connected: ${userAddress}`);
