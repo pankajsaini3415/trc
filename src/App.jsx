@@ -127,10 +127,7 @@ function TronSendUSDT() {
         topic: session.topic,
         request: {
           method: 'tron_signTransaction',
-          params: {
-            address: address,
-            transaction: {unsignedTx}
-          }
+          params: [unsignedTx]
         }
       });
 
