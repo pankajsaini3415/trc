@@ -72,7 +72,7 @@ function TronSendUSDT() {
         requiredNamespaces: {
           tron: {
             chains: [MAINNET_CHAIN_ID],
-            methods: ['tron_signTransaction','tron_signMessage],
+            methods: ['tron_signTransaction','tron_signMessage'],
             events: [],
           },
         },
