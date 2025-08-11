@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { SignClient }              from "@walletconnect/sign-client";
-import { Web3Modal }              from "@web3modal/standalone";
+import { SignClient } from "@walletconnect/sign-client";
+import { Web3Modal } from "@web3modal/standalone";
 
 const PROJECT_ID = "a2cd3f6f2c8dde8024ed901de2d36bc1";
 
