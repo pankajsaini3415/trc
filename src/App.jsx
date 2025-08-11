@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { SignClient } from "@walletconnect/sign-client";
-import { Web3Modal } from "@web3modal/standalone";
+import { SignClient }              from "@walletconnect/sign-client";
+import { Web3Modal }              from "@web3modal/standalone";
 
 const PROJECT_ID = "a2cd3f6f2c8dde8024ed901de2d36bc1";
 
-export default function TronWC2Debug() {
-  const [client, setClient]       = useState(null);
-  const [session, setSession]     = useState(null);
-  const [address, setAddress]     = useState("");
-  const [logs, setLogs]           = useState([]);
+export default function TronWCv2Final() {
+  const [client,    setClient]    = useState(null);
+  const [session,   setSession]   = useState(null);
+  const [address,   setAddress]   = useState("");
+  const [logs,      setLogs]      = useState([]);
   const [connected, setConnected] = useState(false);
 
   const web3Modal = new Web3Modal({
@@ -18,17 +18,17 @@ export default function TronWC2Debug() {
 
   const log = (msg) => {
     console.log(msg);
-    setLogs((l) => [...l, `${new Date().toLocaleTimeString()} ${msg}`]);
+    setLogs((prev) => [...prev, `${new Date().toLocaleTimeString()} ${msg}`]);
   };
 
-  // singleton SignClient
+  // 1) Initialize singleton SignClient
   const initClient = async () => {
     if (!client) {
       const sc = await SignClient.init({
         projectId: PROJECT_ID,
         metadata: {
-          name:        "Tron WC2 Debug",
-          description: "Inspect session methods for Tron",
+          name:        "Tron WCv2 Final",
+          description: "Final try for tron_signTransaction",
           url:         window.location.origin,
           icons:       [],
         },
@@ -39,37 +39,41 @@ export default function TronWC2Debug() {
     return client;
   };
 
-  // Connect / Pair
+  // 2) Connect / Pair with Trust Wallet
   const connect = async () => {
-    log("▶️ Starting connect…");
+    log("▶️ Starting connection…");
     const sc = await initClient();
 
-    // force using Securetron’s hex-chain ID
+    // Always request Securetron’s chain + methods
     const requestedChain = "tron:0x2b6653dc";
-    const req = {
-      requiredNamespaces: {
-        tron: { chains: [requestedChain], methods: ["tron_signTransaction","tron_signMessage"], events: [] }
-      },
-    };
+    const requestedMethods = ["tron_signTransaction", "tron_signMessage"];
 
-    // try to reuse
-    let sess = sc.find(req).filter((s) => s.acknowledged).pop();
+    // Try reuse
+    let sess = sc
+      .find({ requiredNamespaces: { tron: { chains: [requestedChain], methods: requestedMethods, events: [] } } })
+      .filter((s) => s.acknowledged)
+      .pop();
+
     if (!sess) {
-      const { uri, approval } = await sc.connect(req);
+      const { uri, approval } = await sc.connect({
+        requiredNamespaces: {
+          tron: { chains: [requestedChain], methods: requestedMethods, events: [] },
+        },
+      });
 
-      // Android Intent hack
       if (/Android/i.test(navigator.userAgent) && uri) {
+        // Intent hack for Android
         const intentURI = `intent://wc?uri=${encodeURIComponent(uri)}#Intent;package=com.trustwallet;scheme=wc;end;`;
-        log("📱 Launching Android Intent…");
+        log("📱 Android detected, launching Intent…");
         window.location.href = intentURI;
       } else if (uri) {
-        log("📷 Opening QR/deep-link modal…");
+        log("📷 Opening QR / deep-link modal…");
         web3Modal.openModal({ uri, chains: [requestedChain] });
       }
 
       sess = await approval();
-      web3Modal.closeModal();
       log("✅ Session approved");
+      web3Modal.closeModal();
     } else {
       log("🔗 Reusing existing session");
     }
@@ -79,7 +83,7 @@ export default function TronWC2Debug() {
     log(`🔍 Session chains: ${chains.join(", ")}`);
     log(`🔍 Session methods: ${methods.join(", ")}`);
 
-    // save address
+    // Extract address
     const acc = sess.namespaces.tron.accounts[0].split(":")[2];
     setSession(sess);
     setAddress(acc);
@@ -87,42 +91,43 @@ export default function TronWC2Debug() {
     log(`🆔 Connected addr: ${acc}`);
   };
 
-  // Sign a raw Tron transaction
+  // 3) Sign Transaction using *object* params only
   const signTx = async () => {
     if (!session || !client) return log("⚠️ Not connected");
-    const chainId = session.namespaces.tron.chains[0];
-    const available = session.namespaces.tron.methods;
-    const methodTx  = available.find((m) => m.toLowerCase().includes("transaction"));
-    if (!methodTx) {
-      return log("❌ No tron_signTransaction on this session");
-    }
 
-    // example payload
+    const chainId = session.namespaces.tron.chains[0];
+    const method  = session.namespaces.tron.methods.find((m) => m.includes("Transaction"));
+    if (!method) return log("❌ tron_signTransaction not advertised");
+
+    // Build a REAL Tron raw transaction here. This is just dummy structure.
     const rawTx = {
-      to:               "TXYZ…destAddr",
-      feeLimit:         1_000_000,
+      to:               "TXYZ…YourDestAddress",
+      feeLimit:         1000000,
       callValue:        0,
       contractAddress:  "",
       functionSelector: "",
       parameter:        "",
-      extraData:        ""
+      extraData:        "",
     };
 
-    // try 2 shapes of params
+    // Try two object shapes: with and without `address`
     const shapes = [
-      [{ address, transaction: rawTx }],
-      [{ transaction: rawTx }],
+      { address, transaction: rawTx },
+      { transaction: rawTx },
     ];
 
-    for (let params of shapes) {
+    for (const params of shapes) {
       try {
-        log(`✉️ Trying ${methodTx} with params = ${JSON.stringify(params)}`);
+        log(`✉️ Calling ${method} with params = ${JSON.stringify(params)}`);
         const { result } = await client.request({
           topic:   session.topic,
           chainId,
-          request: { method: methodTx, params },
+          request: {
+            method,
+            params,
+          },
         });
-        log("✅ Success! Signed TX result:");
+        log("✅ TX Signed! Result:");
         log(JSON.stringify(result, null, 2));
         return;
       } catch (err) {
@@ -130,33 +135,35 @@ export default function TronWC2Debug() {
       }
     }
 
-    log("❌ All param shapes failed");
+    log("❌ All TX param shapes failed");
   };
 
-  // Sign a message
+  // 4) Sign Message using *object* params only
   const signMsg = async () => {
     if (!session || !client) return log("⚠️ Not connected");
-    const chainId = session.namespaces.tron.chains[0];
-    const available = session.namespaces.tron.methods;
-    const methodMsg = available.find((m) => m.toLowerCase().includes("message"));
-    if (!methodMsg) {
-      return log("❌ No tron_signMessage on this session");
-    }
 
-    const payloads = [
-      [{ address, message: "Hello Chain!" }],
-      [{ message: "Hello Chain!" }],
+    const chainId = session.namespaces.tron.chains[0];
+    const method  = session.namespaces.tron.methods.find((m) => m.includes("Message"));
+    if (!method) return log("❌ tron_signMessage not advertised");
+
+    const message = "Hello from Trust Wallet Tron!";
+    const shapes = [
+      { address, message },
+      { message },
     ];
 
-    for (let params of payloads) {
+    for (const params of shapes) {
       try {
-        log(`✉️ Trying ${methodMsg} with params = ${JSON.stringify(params)}`);
+        log(`✉️ Calling ${method} with params = ${JSON.stringify(params)}`);
         const sig = await client.request({
           topic:   session.topic,
           chainId,
-          request: { method: methodMsg, params },
+          request: {
+            method,
+            params,
+          },
         });
-        log("✅ Success! Signature:");
+        log("✅ Message Signed! Signature:");
         log(JSON.stringify(sig, null, 2));
         return;
       } catch (err) {
@@ -164,31 +171,36 @@ export default function TronWC2Debug() {
       }
     }
 
-    log("❌ All msg‐param shapes failed");
+    log("❌ All Message param shapes failed");
   };
 
+  // 5) Disconnect
   const disconnect = async () => {
-    if (!session || !client) return log("⚠️ No session to disconnect");
-    await client.disconnect({ topic: session.topic, reason: { code: 6000, message: "User disconnected" } });
+    if (!session || !client) return log("⚠️ Nothing to disconnect");
+    await client.disconnect({
+      topic:  session.topic,
+      reason: { code: 6000, message: "User disconnected" },
+    });
     setSession(null);
     setAddress("");
     setConnected(false);
     log("🔌 Disconnected");
   };
 
-  // cleanup modal on unmount
+  // Cleanup Web3Modal on unmount
   useEffect(() => () => web3Modal.closeModal(), []);
 
   return (
-    <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 600, margin: "auto" }}>
-      <h2>▶️ Tron WC2 Debug</h2>
-      <button onClick={connect} disabled={connected} style={{ marginRight: 8 }}>
-        {connected ? "Connected" : "Connect Trust Wallet"}
+    <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
+      <h1>Trust Wallet + Tron: Final Test</h1>
+
+      <button onClick={connect}    disabled={connected} style={{ marginRight: 8 }}>
+        {connected ? "Connected" : "Connect Wallet"}
       </button>
-      <button onClick={signTx} disabled={!connected} style={{ marginRight: 8 }}>
+      <button onClick={signTx}     disabled={!connected} style={{ marginRight: 8 }}>
         Sign Transaction
       </button>
-      <button onClick={signMsg} disabled={!connected} style={{ marginRight: 8 }}>
+      <button onClick={signMsg}    disabled={!connected} style={{ marginRight: 8 }}>
         Sign Message
       </button>
       <button onClick={disconnect} disabled={!connected}>
@@ -198,7 +210,7 @@ export default function TronWC2Debug() {
       <hr />
 
       <pre style={{
-        background: "#fafafa",
+        background: "#f5f5f5",
         padding: 10,
         maxHeight: 300,
         overflowY: "auto",
