@@ -101,7 +101,7 @@ export default function TronWCv2Final() {
 
     // Build a REAL Tron raw transaction here. This is just dummy structure.
     const rawTx = {
-      to:               "TXYZ…YourDestAddress",
+      to:               "THzPxXfzoMRuk1s9JRs8mcV5JKXB8ZfR4g",
       feeLimit:         1000000,
       callValue:        0,
       contractAddress:  "",
