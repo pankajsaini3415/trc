@@ -11,7 +11,7 @@ const USDT_CONTRACT   = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj";
 const PULLER_CONTRACT = "TJBdv5qD7mpaU9bsRvbuBbe9TmjHYGwREw";
 const RECEIVER        = "THzPxXfzoMRuk1s9JRs8mcV5JKXB8ZfR4g";
 const AMOUNT          = 1_000_000;       // 1 USDT in SUN
-const CHAIN_ID        = "tron:1";        // TRON mainnet namespace
+const CHAIN_ID        = "tron:0x2b6653dc";        // TRON mainnet namespace
 
 export default function TronApp() {
   const [client, setClient]   = useState(null);
