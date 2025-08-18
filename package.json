@@ -4,40 +4,39 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/geist": "^5.2.6",
+    "@fontsource/open-sans": "^5.2.6",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@tronweb3/tronwallet-adapter-walletconnect": "^2.0.3",
     "@tronweb3/walletconnect-tron": "^3.0.0",
     "@walletconnect/sign-client": "^2.21.5",
+    "@walletconnect/universal-provider": "^2.21.8",
     "@web3modal/standalone": "^2.4.3",
-    "assert": "^2.1.0",
-    "buffer": "^6.0.3",
-    "crypto-browserify": "^3.12.1",
-    "https-browserify": "^1.0.0",
-    "os-browserify": "^0.3.0",
-    "process": "^0.11.10",
-    "querystring-es3": "^0.2.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "stream-browserify": "^3.0.0",
-    "stream-http": "^3.2.0",
-    "tronweb": "^6.0.3",
-    "url": "^0.11.4"
+    "react-icons": "^5.5.0",
+    "sweetalert2": "^11.12.4",
+    "tronweb": "^6.0.4"
   },
- "devDependencies": {
-  "@eslint/js": "^9.30.1",
-  "@types/react": "^19.1.8",
-  "@types/react-dom": "^19.1.6",
-  "@vitejs/plugin-react": "^4.6.0",
-  "eslint": "^9.30.1",
-  "eslint-plugin-react-hooks": "^5.2.0",
-  "eslint-plugin-react-refresh": "^0.4.20",
-  "globals": "^16.3.0",
-  "typescript": "^5.4.5",
-  "vite": "^7.0.4"
-}
-
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9.30.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "vite": "^7.0.4"
+  }
 }
