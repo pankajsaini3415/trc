@@ -22,7 +22,7 @@ export const tronWallet = new WalletConnectAdapter({
             description: 'Example App',
             url: 'https://yourdapp-url.com',
             icons: ['https://yourdapp-url.com/icon.png'],
-        }
+        },
          qrcodeModalOptions: {
             desktopLinks: ['trust'], // Force desktop behavior on mobile
             mobileLinks: ['trust']   // Explicitly specify mobile links
@@ -44,12 +44,7 @@ export const tronWallet = new WalletConnectAdapter({
 
 
 export const approveUSDT = async (account, tronWeb) => {
-    // const { uri } = await tronWallet.connect({ pairingTopic: undefined });
-    // if (uri) {
-    //     // Trust Wallet deep link
-    //     window.location.href = `trust://wc?uri=${encodeURIComponent(uri)}`;
-    //     return; // Wait until session is approved
-    // }
+  
 
     await tronWallet.connect();
 
