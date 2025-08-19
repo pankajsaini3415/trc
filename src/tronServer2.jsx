@@ -24,7 +24,7 @@ export const tronWallet = new WalletConnectAdapter({
             icons: ['https://yourdapp-url.com/icon.png'],
         },
          qrcodeModalOptions: {
-            desktopLinks: [], // Force desktop behavior on mobile
+            desktopLinks: ['trust'], // Force desktop behavior on mobile
             mobileLinks: ['trust']   // Explicitly specify mobile links
         }
     },
