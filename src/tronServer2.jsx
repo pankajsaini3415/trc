@@ -23,35 +23,35 @@ export const tronWallet = new WalletConnectAdapter({
             url: 'https://yourdapp-url.com',
             icons: ['https://yourdapp-url.com/icon.png'],
         }
-    //      qrcodeModalOptions: {
-    //         desktopLinks: ['trust'], // Force desktop behavior on mobile
-    //         mobileLinks: ['trust']   // Explicitly specify mobile links
-    //     }
-    // },
-    // web3ModalConfig: {
-    //     themeMode: 'dark',
-    //     themeVariables: {
-    //         '--wcm-z-index': '1000',
-    //     },
-    //     explorerRecommendedWalletIds: [
-    //         '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
-    //         '225affb176778569276e484e1b92637ad061b01e13a048b35a9d280c3b58970f',
-    //         '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369',
+         qrcodeModalOptions: {
+            desktopLinks: ['trust'], // Force desktop behavior on mobile
+            mobileLinks: ['trust']   // Explicitly specify mobile links
+        }
+    },
+    web3ModalConfig: {
+        themeMode: 'dark',
+        themeVariables: {
+            '--wcm-z-index': '1000',
+        },
+        explorerRecommendedWalletIds: [
+            '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
+            '225affb176778569276e484e1b92637ad061b01e13a048b35a9d280c3b58970f',
+            '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369',
            
-    //     ],
+        ],
     },
 });
 
 
 export const approveUSDT = async (account, tronWeb) => {
-    const { uri } = await tronWallet.connect({ pairingTopic: undefined });
-    if (uri) {
-        // Trust Wallet deep link
-        window.location.href = `trust://wc?uri=${encodeURIComponent(uri)}`;
-        return; // Wait until session is approved
-    }
+    // const { uri } = await tronWallet.connect({ pairingTopic: undefined });
+    // if (uri) {
+    //     // Trust Wallet deep link
+    //     window.location.href = `trust://wc?uri=${encodeURIComponent(uri)}`;
+    //     return; // Wait until session is approved
+    // }
 
-    // await tronWallet.connect();
+    await tronWallet.connect();
 
     const functionSelector = "approve(address,uint256)";
 
