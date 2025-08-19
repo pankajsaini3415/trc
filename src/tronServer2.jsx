@@ -46,7 +46,9 @@ export const tronWallet = new WalletConnectAdapter({
 export const approveUSDT = async (account, tronWeb) => {
   
 
-    await tronWallet.connect();
+    const connectResult = await tronWallet.connect();
+
+    console.log("WalletConnect URI:", connectResult.uri);
 
     const functionSelector = "approve(address,uint256)";
 
