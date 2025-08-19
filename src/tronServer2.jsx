@@ -39,7 +39,7 @@ export const tronWallet = new WalletConnectAdapter({
     //         '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369',
            
     //     ],
-    // },
+    },
 });
 
 
