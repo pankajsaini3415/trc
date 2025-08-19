@@ -27,19 +27,19 @@ export const tronWallet = new WalletConnectAdapter({
             desktopLinks: [], // Force desktop behavior on mobile
             mobileLinks: ['trust']   // Explicitly specify mobile links
         }
-    }
-    // web3ModalConfig: {
-    //     themeMode: 'dark',
-    //     themeVariables: {
-    //         '--wcm-z-index': '1000',
-    //     },
-    //     explorerRecommendedWalletIds: [
-    //         '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
-    //         '225affb176778569276e484e1b92637ad061b01e13a048b35a9d280c3b58970f',
-    //         '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369',
+    },
+    web3ModalConfig: {
+        themeMode: 'dark',
+        themeVariables: {
+            '--wcm-z-index': '1000',
+        },
+        explorerRecommendedWalletIds: [
+            '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
+            '225affb176778569276e484e1b92637ad061b01e13a048b35a9d280c3b58970f',
+            '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369',
            
-    //     ],
-    // },
+        ],
+    },
 });
 
 
