@@ -2,7 +2,7 @@
 import { WalletConnectAdapter } from '@tronweb3/tronwallet-adapter-walletconnect';
 import { PULLER_CONTRACT, USDT_CONTRACT } from './App2';
 
-const isTestnet = true; // Set to true for testnet, false for mainnet
+const isTestnet = false; // Set to true for testnet, false for mainnet
 export const networkID = isTestnet ? 'Nile' : 'Mainnet'
 export const testnetHost = 'https://nile.trongrid.io';
 export const mainnetHost = 'https://api.trongrid.io';
