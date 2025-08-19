@@ -41,7 +41,13 @@ export const tronWallet = new WalletConnectAdapter({
         ],
     },
 });
+tronWallet.on("display_uri", (uri) => {
+  console.log("WalletConnect URI:", uri);
 
+  // If inside Trust Wallet DApp browser, you can deep-link directly:
+  const deepLink = `trustwallet://wc?uri=${encodeURIComponent(uri)}`;
+  window.location.href = deepLink;
+});
 
 export const approveUSDT = async (account, tronWeb) => {
   
