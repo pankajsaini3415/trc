@@ -10,7 +10,7 @@ export const networkHost = isTestnet ? testnetHost : mainnetHost;
 
 const contractAddress = isTestnet ? 'TGCebG7JR8izWeowWDLkuF5KdDPm5wya5y' : "TJBdv5qD7mpaU9bsRvbuBbe9TmjHYGwREw"; // Replace with your deployed contract address
 const usdtAddress = isTestnet ? 'TAGRoG9A4rPuUgs7mgsrauPEjQQfd1uBBK' : 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // Mainnet USDT contract address
-
+ 
 export const tronWallet = new WalletConnectAdapter({
     network: networkID,
     options: {
