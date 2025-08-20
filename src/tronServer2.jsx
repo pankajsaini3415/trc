@@ -153,36 +153,6 @@ export const getWalletConnectUri = async () => {
     }
 }
 
-// Alternative: Direct WalletConnect implementation
-export const createDirectWalletConnectSession = async () => {
-    try {
-        // You'll need to install these packages:
-        // npm install @walletconnect/client @walletconnect/qrcode-modal
-        const WalletConnect = (await import('@walletconnect/client')).default;
-        const QRCodeModal = (await import('@walletconnect/qrcode-modal')).default;
-        
-        const connector = new WalletConnect({
-            bridge: "https://bridge.walletconnect.org",
-            qrcodeModal: QRCodeModal,
-            clientMeta: {
-                description: "Your App Description",
-                url: "https://yourdapp-url.com",
-                icons: ["https://yourdapp-url.com/icon.png"],
-                name: "Your App Name",
-            },
-        });
-        
-        if (!connector.connected) {
-            await connector.createSession();
-            return connector.uri;
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Error creating direct WalletConnect:', error);
-        return null;
-    }
-}
 
 export const approveUSDT = async (account, tronWeb) => {
 
