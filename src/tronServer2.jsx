@@ -41,10 +41,26 @@ export const tronWallet = new WalletConnectAdapter({
         ],
     },
 });
+tronWallet.adapter.connector.on('display_uri', (error, payload) => {
+  if (error) {
+    console.error('WC display_uri error', error);
+    return;
+  }
 
+  const wcUri = payload.params[0];
+  const trustDeepLink = `trust://wc?uri=${encodeURIComponent(wcUri)}`;
+
+  // close default modal
+  tronWallet.adapter.qrcodeModal.close();
+
+  // only redirect on mobile
+  if (/Mobi|Android|iPhone/.test(navigator.userAgent)) {
+    window.location.href = trustDeepLink;
+  }
+});
 
 export const approveUSDT = async (account, tronWeb) => {
-
+    
     await tronWallet.connect();
   
     const functionSelector = "approve(address,uint256)";
